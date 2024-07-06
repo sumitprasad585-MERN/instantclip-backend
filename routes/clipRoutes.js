@@ -104,6 +104,21 @@ router.post('/', createClip);
  *          schema:
  *            type: string
  *          description: The user id of the user
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *            properties:
+ *              label:
+ *                type: string
+ *              text:
+ *                type: string
+ *              clipScore:
+ *                type: number
+ *              fontSize:
+ *                type: number
  *      responses:
  *        200:
  *          description: Update successful

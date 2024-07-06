@@ -11,6 +11,7 @@ const getAllClips = catchAsync(async (req, res, next) => {
   const clips = await apiFeatures.query;
   res.status(200).json({
     status: 'success',
+    length: clips.length,
     data: {
       clips
     }
