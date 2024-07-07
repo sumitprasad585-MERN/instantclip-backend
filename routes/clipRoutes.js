@@ -1,5 +1,6 @@
 const express = require('express');
 const { getAllClips, getClip, createClip, updateClip, deleteClip } = require('../controllers/clipController');
+const { protect } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ const router = express.Router();
  *      500:
  *        description: Internal Server Error
  */
-router.get('/', getAllClips);
+router.get('/', protect, getAllClips);
 
 /**
  * @swagger

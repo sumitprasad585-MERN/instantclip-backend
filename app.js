@@ -30,7 +30,7 @@ app.use('/api/v1/clips', clipRouter);
 app.use('/api/v1/users', userRouter);
 
 app.use('*', (req, res, next) => {
-  const message = `The resource ${req.originalUrl} is not found on the server ${req.get('host')}`;
+  const message = `The resource ${req.method} ${req.originalUrl} is not found on the server ${req.get('host')}`;
   const appError = new AppError(404, message);
   next(appError);
 });
