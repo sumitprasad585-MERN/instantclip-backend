@@ -17,6 +17,8 @@ const router = express.Router();
  *  get:
  *    summary: Get all clips
  *    tags: [Clips]
+ *    security:
+ *      - bearerAuth: []
  *    responses:
  *      200:
  *        description: Got all the clips
@@ -38,6 +40,8 @@ router.get('/', protect, getAllClips);
  *        schema:
  *          type: string
  *        description: The user id of the user
+ *    security:
+ *      - bearerAuth: []
  *    responses:
  *      200:
  *        description: Got the desired clip
@@ -54,6 +58,8 @@ router.get('/:id', getClip);
  *  post:
  *    summary: Create a new clip
  *    tags: [Clips]
+ *    security:
+ *      - bearerAuth: []
  *    requestBody:
  *      required: true
  *      content:
@@ -105,6 +111,8 @@ router.post('/', createClip);
  *          schema:
  *            type: string
  *          description: The user id of the user
+ *      security:
+ *        - bearerAuth: []
  *      requestBody:
  *        required: true
  *        content:
@@ -145,6 +153,8 @@ router.patch('/:id', updateClip);
  *          schema:
  *            type: string
  *          description: The user id of the user
+ *      security:
+ *        - bearerAuth: []
  *      responses:
  *        204:
  *          description: clip deleted successfully

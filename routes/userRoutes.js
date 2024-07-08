@@ -1,6 +1,6 @@
 const express = require('express');
-const { signup, login } = require('../controllers/authController');
-const { getAllUsers, getUser } = require('../controllers/userController');
+const { signup, login, protect, forgotPassword, resetPassword, updatePassword, restrictTo } = require('../controllers/authController');
+const { getAllUsers, getUser, updateMe, deleteMe } = require('../controllers/userController');
 
 const router = express.Router();
 
@@ -77,6 +77,105 @@ router.post('/signup', signup);
  */
 router.post('/login', login);
 
+
+/**
+ * @swagger
+ *  /api/v1/users/forgotPassword:
+ *    post:
+ *      summary: Get the password reset token link on mail
+ *      tags: [Authentication]
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                email:
+ *                  type: string
+ *                  required: true
+ *      responses:
+ *        200:
+ *          description: Password reset token sent on the user email
+ *        404:
+ *          description: User not found
+ *        500:
+ *          description: Internal Server Error
+ */
+router.post('/forgotPassword', forgotPassword);
+
+/**
+ * @swagger
+ *  /api/v1/users/resetPassword/{resetToken}:
+ *    patch:
+ *      summary: Reset the password by creating a new password
+ *      tags: [Authentication]
+ *      parameters:
+ *        - in: path
+ *          name: resetToken
+ *          required: true
+ *          schema:
+ *            type: string
+ *          description: The password reset token which was received on mail
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                password:
+ *                  type: string
+ *                confirmPassword:
+ *                  type: string
+ *              required:
+ *                  - password
+ *                  - confirmPassword
+ *      responses:
+ *        200:
+ *          description: Password Reset successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal Server Error
+ */
+router.patch('/resetPassword/:resetToken', resetPassword);
+
+/**
+ * @swagger
+ *  /api/v1/users/updatePassword:
+ *    patch:
+ *      summary: Update the current password
+ *      tags: [Authentication]
+ *      security:
+ *        - bearerAuth: []
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                currentPassword:
+ *                  type: string
+ *                newPassword:
+ *                  type: string
+ *                confirmNewPassword:
+ *                  type: string
+ *              required:
+ *                - currentPassword
+ *                - newPassword
+ *                - confirmNewPassword
+ *      responses:
+ *        200:
+ *          description: Password Updated successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal Server Error
+ */
+router.patch('/updatePassword', protect, updatePassword);
+
 /**
  * @swagger
  *  tags:
@@ -90,13 +189,43 @@ router.post('/login', login);
  *    get:
  *      summary: Get all the users in the db
  *      tags: [Users]
+ *      security:
+ *        - bearerAuth: []
  *      responses:
  *        200:
  *          description: got all the users
  *        500:
  *          description: Internal Server Error
  */
-router.get('/', getAllUsers);
+router.get('/', protect, restrictTo('admin', 'developer'), getAllUsers);
 
+/**
+ * @swagger
+ *  /api/v1/users/{id}:
+ *    get:
+ *      summary: Get single user from db using id
+ *      tags: [Users]
+ *      parameters:
+ *        - in: path
+ *          name: id
+ *          required: true
+ *          schema:
+ *            type: string
+ *          description: The id of the user
+ *      security:
+ *        - bearerAuth: []
+ *      responses:
+ *        200:
+ *          description: got the user
+ *        404:
+ *          description: user not found
+ *        500:
+ *          description: Internal Server Error
+ */
+router.get('/:id', protect, restrictTo('admin', 'developer'), getUser);
+
+
+router.patch('/updateMe', protect, updateMe);
+router.delete('/deleteMe', protect, deleteMe);
 
 module.exports = router;

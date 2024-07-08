@@ -3,6 +3,8 @@ const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require('../utils/AppError');
 const { promisify } = require('util');
+const sendMail = require('../utils/mail');
+const crypto = require('crypto');
 
 const signup = catchAsync(async (req, res, next) => {
 
@@ -89,8 +91,128 @@ const protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+const forgotPassword = catchAsync(async (req, res, next) => {
+  /** Find the user based on email */
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError(404, 'No user found with that email'));
+  }
+
+  /** Create the password reset token for the user */
+  const resetToken = user.createPasswordResetToken();
+  console.log(resetToken);
+  await user.save({ validateBeforeSave: false });
+
+  /** Send the reset token to user on mail */
+  const subject = 'Reset Your Password | Valid for 1 Hour ⏰'
+  const text = `Forgot your password? Just send a PATCH request to ${req.get('host')}/api/v1/users/resetPassword/${resetToken} with the new password. Link valid for 1 hour. Please ignore if already done or not triggered by you`;
+  try {
+    await sendMail({
+      to: user.email,
+      subject,
+      text
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpiresAt = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(new AppError(500, 'An error occurred while sending mail'));
+  }
+
+  /** Send the response to user */
+  res.status(200).json({
+    status: 'success',
+    message: 'Password reset link sent to user mail'
+  });
+});
+
+const resetPassword = catchAsync(async (req, res, next) => {
+  /** Find the user based on reset token  */
+  const { resetToken } = req.params;
+
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetTokenExpiresAt: {$gt: Date.now()} });
+  if (!user) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Token Expired or Invalid Token'
+    });
+  }
+
+  /** Save the new password and remove reset token */
+  const { password, confirmPassword } = req.body;
+  user.password = password;
+  user.confirmPassword = confirmPassword;
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpiresAt = undefined;
+
+  await user.save();
+
+  /** Sign the token */
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
+
+  /** Send the token */
+  res.status(200).json({
+    status: 'success',
+    token
+  });
+});
+
+const updatePassword = catchAsync(async (req, res, next) => {
+
+  /** user is already authenticated, validate the current password and update the new password
+   * if credentials are correct
+   */
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    return next(new AppError(400, 'Please enter currentPassword, newPassword, and confirmNewPassword'));
+  }
+  const user = await User.findById(req.user._id).select('+password');
+
+  let correct = false;
+  correct = await user.verifyPassword(currentPassword, user.password);
+
+  if (!correct) {
+    return next(new AppError(400, 'The current password is incorrect'));
+  }
+
+  /** Update the password */
+  user.password = newPassword;
+  user.confirmPassword = confirmNewPassword;
+  await user.save();
+
+  /** Sign the token */
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
+
+  /** Send the token */
+  res.status(200).json({
+    status: 'success',
+    message: 'Password updated successfully',
+    token
+  });
+});
+
+const restrictTo = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(new AppError(403, 'You are not authorized to perform this action'));
+    }
+    next();
+  }
+}
+
 module.exports = {
   signup,
   login,
-  protect
+  protect,
+  forgotPassword,
+  resetPassword,
+  updatePassword,
+  restrictTo
 };
