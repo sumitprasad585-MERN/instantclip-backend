@@ -1,6 +1,6 @@
 const express = require('express');
 const { signup, login, protect, forgotPassword, resetPassword, updatePassword, restrictTo } = require('../controllers/authController');
-const { getAllUsers, getUser, updateMe, deleteMe } = require('../controllers/userController');
+const { getAllUsers, getUser, updateUser, deleteUser, updateMe, deleteMe } = require('../controllers/userController');
 
 const router = express.Router();
 
@@ -225,7 +225,115 @@ router.get('/', protect, restrictTo('admin', 'developer'), getAllUsers);
 router.get('/:id', protect, restrictTo('admin', 'developer'), getUser);
 
 
+/**
+ * @swagger
+ *  /api/v1/users/{id}:
+ *    patch:
+ *      summary: Update the user using user ID
+ *      tags: [Users]
+ *      security:
+ *        - bearerAuth: []
+ *      parameters:
+ *        - in: path
+ *          name: id
+ *          required: true
+ *          schema:
+ *            type: string
+ *          description: The user ID of the user to be updated
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                name:
+ *                  type: string
+ *                username:
+ *                  type: string
+ *      responses:
+ *        200:
+ *          description: User updated successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal Server Error
+ */
+router.patch('/:id', protect, restrictTo('admin', 'developer'), updateUser);
+
+
+/**
+ * @swagger
+ *  /api/v1/users/{id}:
+ *    delete:
+ *      summary: Delete a user using user ID
+ *      tags: [Users]
+ *      security:
+ *        - bearerAuth: []
+ *      parameters:
+ *        - in: path
+ *          name: id
+ *          required: true
+ *          schema:
+ *            type: string
+ *          description: The user ID of the user to be updated
+ *      responses:
+ *        204:
+ *          description: User deleted successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal Server Error
+ */
+router.delete('/:id', protect, restrictTo('admin', 'developer'), deleteUser);
+
+
+
+/**
+ * @swagger
+ *  /api/v1/users/updateMe:
+ *    patch:
+ *      summary: User updates its own details (allowed fields only, only admin can modify all the fields)
+ *      tags: [Users]
+ *      security:
+ *        - bearerAuth: []
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                name:
+ *                  type: string
+ *                username:
+ *                  type: string
+ *      responses:
+ *        200:
+ *          description: User updated successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal Server Error
+ */
 router.patch('/updateMe', protect, updateMe);
+
+/**
+ * @swagger
+ *  /api/v1/users/deleteMe:
+ *    delete:
+ *      summary: User deletes itself (only makes the user inactive, Only admin have deletion rights)
+ *      tags: [Users]
+ *      security:
+ *        - bearerAuth: []
+ *      responses:
+ *        204:
+ *          description: User deleted successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal Server Error
+ */
 router.delete('/deleteMe', protect, deleteMe);
 
 module.exports = router;
