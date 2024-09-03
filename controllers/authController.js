@@ -26,6 +26,7 @@ const signup = catchAsync(async (req, res, next) => {
   });
 
   /** Send the token */
+  user.password = undefined;
   res.status(200).json({
     status: 'success',
     token,
@@ -42,7 +43,7 @@ const login = catchAsync(async (req, res, next) => {
 
   /** Validate the user password only if the user is found */
   let correct = false;
-  if (user) {
+  if (user && req.body.password) {
     correct = await user.verifyPassword(req.body.password, user.password);
   }
 
