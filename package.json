@@ -1,0 +1,23 @@
+{
+  "name": "instantclip-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "start:prod": "NODE_ENV=production nodemon index.js",
+    "test": "npm test"
+  },
+  "author": "Sumit Prasad",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.9.3",
+    "morgan": "^1.10.0"
+  }
+}
