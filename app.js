@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const clipRouter = require('./routes/clipRoutes');
 const userRouter = require('./routes/userRoutes');
+const { globalErrorHandler } = require('./controllers/errorController');
 
 const app = express();
 
@@ -18,6 +19,8 @@ app.use(express.json());
 
 // Mount the routers
 app.use('/api/v1/clips', clipRouter);
-app.use('/api/v1/user', userRouter);
+app.use('/api/v1/users', userRouter);
 
+// Global Error Hanlder
+app.use(globalErrorHandler);
 module.exports = app;
