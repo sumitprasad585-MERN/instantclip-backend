@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcryptjs = require('bcryptjs');
+const crypto = require('crypto');
 const validator = require('validator');
 
 const userSchema = new mongoose.Schema({
@@ -67,6 +68,8 @@ const userSchema = new mongoose.Schema({
 
 // Pre save hook to encrypt the password
 userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
   this.password = await bcryptjs.hash(this.password, 12);
   this.confirmPassword = undefined;
   next();
@@ -76,7 +79,19 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.validatePassword = async function (enteredPassword, userPasswordInDb) {
   // 'this' refers to document here
   return bcryptjs.compare(enteredPassword, userPasswordInDb);
-}
+};
+
+// Instance schema method to create password reset token
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  const numHours = 1;
+  this.passwordResetToken = hashedToken;
+  this.passwordResetTokenExpiresAt = Date.now() + 1000 * 60 * 60 * numHours;
+
+  return resetToken;
+};
 
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true })
