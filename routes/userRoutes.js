@@ -189,16 +189,182 @@ router.patch('/resetPassword/:resetToken', resetPassword);
  */
 router.patch('/updatePassword', protect, updatePassword);
 
+
+/**
+ * @swagger
+ *  tags:
+ *    name: Users API
+ *    description: Endpoints related to Users API
+ */
+
+/**
+ * @swagger
+ * /api/v1/users:
+ *  get:
+ *    summary: Get all users
+ *    tags: [Users API]
+ *    description: Get all the users
+ *    security:
+ *      - bearerAuth: []
+ *    responses:
+ *      200:
+ *        description: Got all the users
+ *      401:
+ *        description: Unauthorized, Please login.
+ *      500:
+ *        description: Internal Server Error
+ */
 router.get('/', protect, restrictTo('admin', 'developer', 'moderator'), getAllUsers);
 
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *  get:
+ *    summary: Get all users
+ *    tags: [Users API]
+ *    description: Get all the users
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *    responses:
+ *      200:
+ *        description: Got the user
+ *      401:
+ *        description: Unauthorized, Please login.
+ *      404:
+ *        description: User not found
+ *      500:
+ *        description: Internal Server Error
+ */
 router.get('/:id', protect, restrictTo('admin', 'developer', 'moderator'), getUser);
 
+/**
+ * @swagger
+ * /api/v1/users/updateMe:
+ *  patch:
+ *    summary: Update user [For User]
+ *    tags: [Users API]
+ *    description: User updates limited fields
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              name:
+ *                type: string
+ *              username:
+ *                type: string
+ *    responses:
+ *      200:
+ *        description: User Updated
+ *      401:
+ *        description: Unauthorized, Please login.
+ *      500:
+ *        description: Internal Server Error
+ */
 router.patch('/updateMe', protect, updateMe);
 
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *  patch:
+ *    summary: Update user [For Admin]
+ *    tags: [Users API]
+ *    description: Update the user based on user ID
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              name:
+ *                type: string
+ *              username:
+ *                type: string
+ *              role:
+ *                type: string
+ *    responses:
+ *      200:
+ *        description: User Updated
+ *      401:
+ *        description: Unauthorized, Please login.
+ *      500:
+ *        description: Internal Server Error
+ */
 router.patch('/:id', protect, restrictTo('admin', 'developer', 'moderator'), updateUser);
 
+/**
+ * @swagger
+ * /api/v1/users/deleteMe:
+ *  delete:
+ *    summary: Delete User [For User]
+ *    tags: [Users API]
+ *    description: Delete the user
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *    responses:
+ *      204:
+ *        description: User Deleted
+ *      401:
+ *        description: Unauthorized, Please login.
+ *      500:
+ *        description: Internal Server Error
+ */
 router.delete('/deleteMe', protect, deleteMe);
 
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *  delete:
+ *    summary: Delete User [For Admin]
+ *    tags: [Users API]
+ *    description: Delete the user based on user id
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *    responses:
+ *      204:
+ *        description: User Deleted
+ *      401:
+ *        description: Unauthorized, Please login.
+ *      500:
+ *        description: Internal Server Error
+ */
 router.delete('/:id', protect, restrictTo('admin', 'developer', 'moderator'), deleteUser);
 
 module.exports = router;
