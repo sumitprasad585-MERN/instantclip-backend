@@ -102,6 +102,16 @@ userSchema.methods.createPasswordResetToken = function() {
   return resetToken;
 };
 
+// Instance schema method to verify if the password was changed after issuing a token
+userSchema.methods.didPasswordChange = function (issuedJwtTimestamp) {
+  // 'this' refers to document here
+  if (this.passwordChangedAt) {
+    const changePasswordTimestamp = parseInt(this.passwordChangedAt.getTime()/1000, 10);
+    return changePasswordTimestamp > issuedJwtTimestamp;
+  }
+  return false;
+}
+
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true })
 

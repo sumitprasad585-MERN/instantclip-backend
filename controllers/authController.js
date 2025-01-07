@@ -133,9 +133,83 @@ const resetPassword = catchAsync(async (req, res, next) => {
   });
 });
 
+const updatePassword = catchAsync(async (req, res, next) => {
+
+  // User is already authenticated and details are present on request object
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    const appError = new AppError(400, 'Please enter currentPassword, newPassword, and confirmNewPassword');
+    return next(appError);
+  };
+
+  // Validate if the current password is correct
+  let user = await User.findById(req.user.id).select('+password');
+  let passwordIsCorrect = false;
+  passwordIsCorrect = await user.validatePassword(currentPassword, user.password);
+  if (!passwordIsCorrect) {
+    const appError = new AppError(400, "Current Password is incorrect");
+    return next(appError);
+  }
+
+  // Save the new password provided by the user
+  user.password = newPassword;
+  user.confirmPassword = confirmNewPassword;
+  await user.save({ validateBeforeSave: true });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Password changed successfully'
+  })
+});
+
+const protect = catchAsync(async (req, res, next) => {
+
+  // Check if bearer token is passed with the request
+  if (req.headers && !req.headers.authorization) {
+    const appError = new AppError(401, 'You are not logged in. Please login');
+    return next(appError);
+  }
+
+  // Extract the bearer token and verify the token
+  let token = req.headers && req.headers.authorization && req.headers.authorization.split('Bearer ')[1];
+  let decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  // Check if the user still exists
+  const user = await User.findById(decoded.id);
+  if (!user) {
+    const appError = new AppError(401, 'User deleted');
+    return next(appError);
+  }
+
+  // Check if the password was changed after after the token was issued
+  const issuedJwtTimestamp = decoded.iat;
+  let passwordWasChanged = user.didPasswordChange(issuedJwtTimestamp);
+  if (passwordWasChanged) {
+    const appError = new AppError(401, 'Password was changed recently. Please login again.')
+    return next(appError);
+  }
+
+  // All good, invoke the next middleware in the middleware stack
+  req.user = user;
+  next();
+});
+
+const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      const appError = new AppError(403, 'You are not authorized to perform this action');
+      return next(appError);
+    }
+    next();
+  }
+}
+
 module.exports = {
   signup,
   login,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  updatePassword,
+  protect,
+  restrictTo
 };
