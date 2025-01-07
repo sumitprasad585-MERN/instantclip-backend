@@ -112,6 +112,13 @@ userSchema.methods.didPasswordChange = function (issuedJwtTimestamp) {
   return false;
 }
 
+/** pre find hook to suppress inactive users in the queries */
+userSchema.pre(/^find/, function(next) {
+  // 'this' refers to query here
+  this.find({ active: {$ne: false} });
+  next();
+});
+
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true })
 

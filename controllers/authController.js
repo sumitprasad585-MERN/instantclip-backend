@@ -43,7 +43,7 @@ const login = catchAsync(async (req, res, next) => {
 
   // If user is found, validate the password through instance schema method
   let passwordIsCorrect = false;
-  passwordIsCorrect = await user.validatePassword(req.body.password, user.password);
+  passwordIsCorrect = user && await user.validatePassword(req.body.password, user.password);
   if (!user || !passwordIsCorrect ) {
     const appError = new AppError(400, 'Invalid Credentails');
     return next(appError);
