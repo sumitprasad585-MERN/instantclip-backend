@@ -156,10 +156,16 @@ const updatePassword = catchAsync(async (req, res, next) => {
   user.confirmPassword = confirmNewPassword;
   await user.save({ validateBeforeSave: true });
 
+  // Sign a new token and send the token
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
+
   res.status(200).json({
     status: 'success',
-    message: 'Password changed successfully'
-  })
+    message: 'Password changed successfully',
+    token
+  });
 });
 
 const protect = catchAsync(async (req, res, next) => {

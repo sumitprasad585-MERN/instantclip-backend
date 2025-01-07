@@ -1,14 +1,21 @@
 const catchAsync = require('../utils/catchAsync');
 const Clip = require('../models/clipModel');
+const ApiFeatures = require('../utils/ApiFeatures');
 
 const getAllClips = catchAsync(async (req, res, next) => {
-  const clips = await Clip.find({});
+  const apiFeatures = new ApiFeatures(Clip.find({}), req.query)
+    .enableSearchByFieldFor('data', 'label')
+    .filter()
+    .sort()
+    .paginate()
+    .limitFields();
+  const clips = await apiFeatures.query;
   return res.status(200).json({
     status: 'success',
     length: clips.length,
     data: {
-      clips
-    }
+      clips,
+    },
   });
 });
 
