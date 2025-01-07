@@ -3,6 +3,7 @@ const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const mailUser = require('../utils/mail');
+const AppError = require("../utils/AppError");
 
 const signup = catchAsync(async (req, res, next) => {
   // Get only required fields from user, so that user doesn't inject malicious fields like role: admin
@@ -31,24 +32,21 @@ const signup = catchAsync(async (req, res, next) => {
 });
 
 const login = catchAsync(async (req, res, next) => {
-  // find the user based on email
+  // find the user based on email or username
   const { email, username, password } = req.body;
   if ((!email && !username) || !password) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'Please enter email/username and password'
-    });
+    const appError = new AppError(400, 'Please enter email/username and password');
+    return next(appError);
   }
+
   const user = await User.findOne({ $or: [{email}, {username}] }).select('+password');
 
   // If user is found, validate the password through instance schema method
   let passwordIsCorrect = false;
   passwordIsCorrect = await user.validatePassword(req.body.password, user.password);
   if (!user || !passwordIsCorrect ) {
-    return res.status(400).json({
-      status: '400',
-      error: 'Invalid Credentials'
-    });
+    const appError = new AppError(400, 'Invalid Credentails');
+    return next(appError);
   }
 
   // If password is correct, then sign and send the token
@@ -66,18 +64,15 @@ const forgotPassword = catchAsync(async (req, res, next) => {
   // Check if email or username is provided
   const { email, username } = req.body;
   if (!email && !username) {
-    return res.status(400).json({
-      status: 'fail',
-      error: 'Please enter email or username'
-    });
+    const appError = new AppError(400, 'Please enter email or username');
+    return next(appError);
   }
+
   // Find the user based on email or username
   const user = await User.findOne({$or: [{email}, {username}]})
   if (!user) {
-    return res.status(404).json({
-      status: 'fail',
-      error: 'No user found with that email/username'
-    });
+    const appError = new AppError(404, 'No user found with that email/username');
+    return next(appError);
   }
 
   // Create password reset token
@@ -100,9 +95,9 @@ const forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 const resetPassword = catchAsync(async (req, res, next) => {
-  const { resetToken } = req.params;
 
   // Hash the token and find the user based on hashed token
+  const { resetToken } = req.params;
   const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
   const user = await User.findOne({
     passwordResetToken: hashedToken,
@@ -110,23 +105,18 @@ const resetPassword = catchAsync(async (req, res, next) => {
   });
 
   if (!user) {
-    return res.status(400).json({
-      status: 'fail',
-      error: 'Invalid or Expired Token'
-    });
+    const appError = new AppError(400, 'Invalid or Expired Token');
+    return next(appError);
   }
 
   if (!req.body.password && !req.body.confirmPassword) {
-    return res.status(400).json({
-      status: 'fail',
-      error: 'Please enter password and confirmPassword'
-    });
+    const appError = new AppError(400, 'Please enter password and confirmPassword');
+    return next(appError);
   }
 
   // Save the new password
   user.password = req.body.password;
   user.confirmPassword = req.body.confirmPassword;
-  user.passwordChangedAt = Date.now() - 1000;
   user.passwordResetToken = undefined;
   user.passwordResetTokenExpiresAt = undefined;
   await user.save({ validateBeforeSave: true });
