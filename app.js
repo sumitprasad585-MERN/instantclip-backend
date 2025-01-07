@@ -4,8 +4,12 @@ const helmet = require('helmet');
 const clipRouter = require('./routes/clipRoutes');
 const userRouter = require('./routes/userRoutes');
 const { globalErrorHandler } = require('./controllers/errorController');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger/swaggerSpec');
 
 const app = express();
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 if (process.env.NODE_ENV === 'development')
   app.use(morgan('dev'));
