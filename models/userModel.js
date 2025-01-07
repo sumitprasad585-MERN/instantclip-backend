@@ -93,6 +93,15 @@ userSchema.methods.createPasswordResetToken = function() {
   return resetToken;
 };
 
+// pre save hook to update the 'passwordChangedAt' whenever password is changed
+userSchema.pre('save', function (next) {
+  // 'this' refers to document here
+  if (!this.isModified('password') || this.isNew) return next();
+  this.passwordChangedAt = Date.now() - 1000;
+
+  next();
+});
+
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true })
 
