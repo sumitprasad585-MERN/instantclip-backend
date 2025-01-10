@@ -70,7 +70,9 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
-  this.password = await bcryptjs.hash(this.password, 12);
+  // Generate salt with 12 rounds of salting
+  const salt = await bcryptjs.genSalt(12);
+  this.password = await bcryptjs.hash(this.password, salt);
   this.confirmPassword = undefined;
   next();
 });
