@@ -22,12 +22,20 @@ const signup = catchAsync(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
+  // Generate the refresh token
+  const refresh_token = jwt.sign({ id: newUser.id }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+  });
+
+  // Hash the refresh token and save to db
+  await newUser.saveRefreshToken(refresh_token);
+  await newUser.save({ validateBeforeSave: false });
+
   res.status(201).json({
     status: 'success',
+    message: 'User created successfuly',
     token,
-    data: {
-      user: newUser
-    }
+    refresh_token
   });
 });
 
@@ -44,6 +52,7 @@ const login = catchAsync(async (req, res, next) => {
   // If user is found, validate the password through instance schema method
   let passwordIsCorrect = false;
   passwordIsCorrect = user && await user.validatePassword(req.body.password, user.password);
+  console.log(passwordIsCorrect);
   if (!user || !passwordIsCorrect ) {
     const appError = new AppError(400, 'Invalid Credentails');
     return next(appError);
@@ -54,9 +63,19 @@ const login = catchAsync(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
+  // Generate the refresh token
+  const refresh_token = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+  });
+
+  // Hash the refresh token and save to db
+  await user.saveRefreshToken(refresh_token);
+  await user.save({ validateBeforeSave: false });
+
   res.status(200).json({
     status: 'success',
-    token
+    token,
+    refresh_token
   });
 });
 

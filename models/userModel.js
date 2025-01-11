@@ -54,6 +54,10 @@ const userSchema = new mongoose.Schema({
   passwordResetToken: String,
   passwordResetTokenExpiresAt: Date,
   passwordChangedAt: Date,
+  refreshToken: {
+    type: String,
+    select: false
+  },
   slug: String,
   createdAt: {
     type: Date,
@@ -85,6 +89,14 @@ userSchema.pre('save', function (next) {
 
   next();
 });
+
+// Instance schema method to encrypt to refresh token
+userSchema.methods.saveRefreshToken = async function(refresh_token) {
+  /** 'this' refers to document here */
+  const salt = await bcryptjs.genSalt(12);
+  const hashedRefreshToken = await bcryptjs.hash(refresh_token, salt);
+  this.refreshToken = hashedRefreshToken;
+}
 
 // Instance schema method to validate the user password
 userSchema.methods.validatePassword = async function (enteredPassword, userPasswordInDb) {
