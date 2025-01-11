@@ -1,5 +1,5 @@
 const express = require('express');
-const { signup, login, forgotPassword, resetPassword, updatePassword, protect, restrictTo, refreshAccessToken } = require('../controllers/authController');
+const { signup, login, forgotPassword, resetPassword, updatePassword, protect, restrictTo, refreshAccessToken, logout } = require('../controllers/authController');
 const { getAllUsers, getUser, updateUser, updateMe, deleteUser, deleteMe } = require('../controllers/userController');
 
 const router = express.Router();
@@ -219,6 +219,23 @@ router.patch('/updatePassword', protect, updatePassword);
  *
  */
 router.post('/refreshToken', refreshAccessToken);
+
+/**
+ * @swagger
+ * /api/v1/users/logout:
+ *  post:
+ *    summary: Logout user
+ *    tags: [Authentication]
+ *    description: Unset the refresh token of user in DB on logout
+ *    response:
+ *      200:
+ *        description: OK
+ *      400:
+ *        description: Bad request
+ *      500:
+ *        description: Internal server error, something went wrong
+ */
+router.post('/logout', protect, logout);
 
 
 /**

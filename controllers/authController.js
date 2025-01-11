@@ -263,6 +263,14 @@ const refreshAccessToken = catchAsync(async (req, res, next) => {
   });
 });
 
+const logout = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { refreshToken: null });
+  res.status(200).json({
+    status: 'success',
+    message: 'Logged out successfully'
+  });
+});
+
 module.exports = {
   signup,
   login,
@@ -271,5 +279,6 @@ module.exports = {
   updatePassword,
   protect,
   restrictTo,
-  refreshAccessToken
+  refreshAccessToken,
+  logout
 };
