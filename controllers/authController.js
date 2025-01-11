@@ -229,6 +229,40 @@ const restrictTo = (...roles) => {
   }
 }
 
+const refreshAccessToken = catchAsync(async (req, res, next) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) {
+    const appError = new AppError(400, "Please provide refresh token");
+    return next(appError);
+  }
+
+  // Get the user based on the refresh token
+  const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN_SECRET);
+  const user = await User.findById(decoded.id).select('+refreshToken');
+
+  if (!user) {
+    const appError = new AppError(400, "Invalid refresh token or user not found");
+    return next(appError);
+  }
+
+  // Validate the refresh token
+  const refreshTokenIsValid = await user.validateRefreshToken(refresh_token, user.refreshToken);
+  if (!refreshTokenIsValid) {
+    const appError = new AppError(400, "Invalid refresh token");
+    return next(appError);
+  }
+
+  // Generate a new access token
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
+
+  res.status(200).json({
+    status: 'success',
+    token
+  });
+});
+
 module.exports = {
   signup,
   login,
@@ -236,5 +270,6 @@ module.exports = {
   resetPassword,
   updatePassword,
   protect,
-  restrictTo
+  restrictTo,
+  refreshAccessToken
 };

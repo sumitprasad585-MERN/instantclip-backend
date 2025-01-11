@@ -1,5 +1,5 @@
 const express = require('express');
-const { signup, login, forgotPassword, resetPassword, updatePassword, protect, restrictTo } = require('../controllers/authController');
+const { signup, login, forgotPassword, resetPassword, updatePassword, protect, restrictTo, refreshAccessToken } = require('../controllers/authController');
 const { getAllUsers, getUser, updateUser, updateMe, deleteUser, deleteMe } = require('../controllers/userController');
 
 const router = express.Router();
@@ -188,6 +188,37 @@ router.patch('/resetPassword/:resetToken', resetPassword);
  *        description: Internal Server Error
  */
 router.patch('/updatePassword', protect, updatePassword);
+
+/**
+ * @swagger
+ * /api/v1/users/renewToken:
+ *  post:
+ *    summary: Renew the access token using refresh token
+ *    tags: [Authentication]
+ *    description: Renew the access token using refresh token
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              refresh_token:
+ *                type: string
+ *            required:
+ *              - refresh_token
+ *    responses:
+ *      200:
+ *        description: OK, Refreshed the access token
+ *      400:
+ *        description: Bad request
+ *      401:
+ *        description: Unauthorized, Please login
+ *      500:
+ *        description: Internal server error, something went wrong
+ *
+ */
+router.post('/refreshToken', refreshAccessToken);
 
 
 /**

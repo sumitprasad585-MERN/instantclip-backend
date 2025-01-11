@@ -104,6 +104,12 @@ userSchema.methods.validatePassword = async function (enteredPassword, userPassw
   return bcryptjs.compare(enteredPassword, userPasswordInDb);
 };
 
+// Instance schema method to validate the refresh token
+userSchema.methods.validateRefreshToken = async function(refreshToken, dbRefreshToken) {
+  /** 'this' refers to document here */
+  return bcryptjs.compare(refreshToken, dbRefreshToken);
+};
+
 // Instance schema method to create password reset token
 userSchema.methods.createPasswordResetToken = function() {
   const resetToken = crypto.randomBytes(32).toString('hex');
