@@ -58,7 +58,6 @@ const updateClip = catchAsync(async (req, res, next) => {
 });
 
 const deleteClip = catchAsync(async (req, res, next) => {
-  console.log(req.params);
   await Clip.findByIdAndDelete(req.params.id);
   res.status(204).json({
     status: 'success',

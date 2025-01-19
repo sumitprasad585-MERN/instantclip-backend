@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const cors = require('cors');
 const clipRouter = require('./routes/clipRoutes');
 const userRouter = require('./routes/userRoutes');
 const { globalErrorHandler } = require('./controllers/errorController');
@@ -10,6 +11,8 @@ const swaggerSpec = require('./swagger/swaggerSpec');
 const app = express();
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.use(cors());
 
 if (process.env.NODE_ENV === 'development')
   app.use(morgan('dev'));

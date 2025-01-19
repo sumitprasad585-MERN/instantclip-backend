@@ -21,9 +21,7 @@ const clipSchema = new mongoose.Schema({
     validate: {
       validator: function (value) {
         // 'label' is required if datatype is 'password'
-        console.log('inside validator function')
         if (this.datatype === 'password' && (!value || value.trim() === '')) {
-          console.log('this ran');
           return false;
         }
         return true;
