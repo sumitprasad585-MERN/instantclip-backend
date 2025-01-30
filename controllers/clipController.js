@@ -4,13 +4,15 @@ const ApiFeatures = require('../utils/ApiFeatures');
 const AppError = require('../utils/AppError');
 
 const getAllClips = catchAsync(async (req, res, next) => {
-  const apiFeatures = new ApiFeatures(Clip.find({}), req.query)
-    .enableSearchByFieldFor('data', 'label')
-    .filter()
-    .sort()
-    .paginate()
-    .limitFields();
-  const clips = await apiFeatures.query;
+  // TODO: FIXME: Fix the bug in querying
+  // const apiFeatures = new ApiFeatures(Clip.find({}), req.query)
+  //   .enableSearchByFieldFor('data', 'label')
+  //   .filter()
+  //   .sort()
+  //   .paginate()
+  //   .limitFields();
+  // const clips = await apiFeatures.query;
+  const clips = await Clip.find({});
   return res.status(200).json({
     status: 'success',
     length: clips.length,

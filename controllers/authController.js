@@ -5,6 +5,19 @@ const crypto = require('crypto');
 const mailUser = require('../utils/mail');
 const AppError = require("../utils/AppError");
 
+const sendCredentialsAsCookies = (res, token, refresh_token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: process.env.JWT_EXPIRES_IN
+  });
+  res.cookie('refresh_token', refresh_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: process.env.REFRESH_TOKEN_EXPIRES_IN
+  });
+};
+
 const signup = catchAsync(async (req, res, next) => {
   // Get only required fields from user, so that user doesn't inject malicious fields like role: admin
   const { username, email, password, confirmPassword } = req.body;
@@ -31,11 +44,11 @@ const signup = catchAsync(async (req, res, next) => {
   await newUser.saveRefreshToken(refresh_token);
   await newUser.save({ validateBeforeSave: false });
 
+  sendCredentialsAsCookies(res, token, refresh_token);
+
   res.status(201).json({
     status: 'success',
-    message: 'User created successfuly',
-    token,
-    refresh_token
+    message: 'User created successfully'
   });
 });
 
@@ -72,10 +85,11 @@ const login = catchAsync(async (req, res, next) => {
   await user.saveRefreshToken(refresh_token);
   await user.save({ validateBeforeSave: false });
 
+  sendCredentialsAsCookies(res, token, refresh_token);
+
   res.status(200).json({
     status: 'success',
-    token,
-    refresh_token
+    message: 'Logged in successfully'
   });
 });
 
@@ -145,10 +159,16 @@ const resetPassword = catchAsync(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
+  // Sign a new refresh token and send the token
+  const refresh_token = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+  });
+
+  sendCredentialsAsCookies(res, token, refresh_token);
+
   res.status(200).json({
     status: 'success',
-    message: 'Password reset successful',
-    token
+    message: 'Password reset successful'
   });
 });
 
@@ -180,14 +200,25 @@ const updatePassword = catchAsync(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
+  // Sign a new refresh token and send the token
+  const refresh_token = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+  });
+
+  sendCredentialsAsCookies(res, token, refresh_token);
+
   res.status(200).json({
     status: 'success',
-    message: 'Password changed successfully',
-    token
+    message: 'Password changed successfully'
   });
 });
 
-const protect = catchAsync(async (req, res, next) => {
+/**
+ * Proect - For Bearer Auth
+ * Read the token from request headers
+ * Less secure and manually manage the access tokens
+ */
+const protectOld = catchAsync(async (req, res, next) => {
 
   // Check if bearer token is passed with the request
   if (req.headers && !req.headers.authorization) {
@@ -219,6 +250,38 @@ const protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+const protect = catchAsync(async (req, res, next) => {
+  // Get the token from the cookies
+  let token = req.cookies?.token;
+  if (!token) {
+    const appError = new AppError(401, 'You are not logged in. Please login');
+    return next(appError);
+  }
+
+  // Verify token
+  console.log('The token is: ', token);
+  let decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  // Check if the user still exits
+  const user = await User.findById(decoded.id);
+  if (!user) {
+    const appError = new AppError(401, 'User deleted');
+    return next(appError);
+  }
+
+  // Check if the password was changed after the token was issued
+  const issuedJwtTimestamp = decoded.iat;
+  let passwordWasChanged = user.didPasswordChange(issuedJwtTimestamp);
+  if (passwordWasChanged) {
+    const appError = new AppError(401, 'Password was changed recently. Please login again');
+    return next(appError);
+  }
+
+  // All good, invoke the next middleware in the middelware stack to grant access
+  req.user = user;
+  next();
+})
+
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -230,7 +293,7 @@ const restrictTo = (...roles) => {
 }
 
 const refreshAccessToken = catchAsync(async (req, res, next) => {
-  const { refresh_token } = req.body;
+  const refresh_token = req.cookies?.refresh_token;
   if (!refresh_token) {
     const appError = new AppError(400, "Please provide refresh token");
     return next(appError);
@@ -257,14 +320,22 @@ const refreshAccessToken = catchAsync(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: process.env.JWT_EXPIRES_IN
+  });
+
   res.status(200).json({
     status: 'success',
-    token
+    message: 'token refreshed successfully'
   });
 });
 
 const logout = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { refreshToken: null });
+  res.clearCookie('token');
+  res.clearCookie('refresh_token');
   res.status(200).json({
     status: 'success',
     message: 'Logged out successfully'

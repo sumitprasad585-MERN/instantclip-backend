@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
-
+// TODO: ADD color for a clip, set a random color by default
+// TODO: Make the clips unique
 const clipSchema = new mongoose.Schema({
   data: {
     type: String,
-    required: [true, 'a clip should not be empty']
+    required: [true, 'a clip should not be empty'],
+    unique: [true, 'clip already present']
   },
   datatype: {
     type: String,
