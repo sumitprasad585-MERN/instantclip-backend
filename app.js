@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const clipRouter = require('./routes/clipRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -9,10 +10,17 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger/swaggerSpec');
 
 const app = express();
+app.use(cookieParser());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  /**
+   * Allow the browser to send the cookies with the request
+   */
+  credentials: true
+}));
 
 if (process.env.NODE_ENV === 'development')
   app.use(morgan('dev'));
