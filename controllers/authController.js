@@ -7,7 +7,7 @@ const AppError = require("../utils/AppError");
 
 const sendCredentialsAsCookies = (res, token, refresh_token) => {
   res.cookie('token', token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     maxAge: process.env.JWT_EXPIRES_IN
   });
@@ -86,7 +86,7 @@ const login = catchAsync(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   sendCredentialsAsCookies(res, token, refresh_token);
-
+  
   res.status(200).json({
     status: 'success',
     message: 'Logged in successfully'
@@ -321,7 +321,7 @@ const refreshAccessToken = catchAsync(async (req, res, next) => {
   });
 
   res.cookie('token', token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     maxAge: process.env.JWT_EXPIRES_IN
   });
